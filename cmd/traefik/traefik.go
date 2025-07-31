@@ -210,13 +210,14 @@ func setupServer(staticConfiguration *static.Configuration) (*server.Server, err
 		}
 	}
 	metricsRegistry := metrics.NewMultiRegistry(metricRegistries)
-	accessLog := setupAccessLog(ctx, staticConfiguration.AccessLog)
+	   accessLog := setupAccessLog(ctx, staticConfiguration.AccessLog)
+	   tcpAccessLog := setupTCPAccessLog(staticConfiguration.AccessLog)
 	tracer, tracerCloser := setupTracing(ctx, staticConfiguration.Tracing)
 	observabilityMgr := middleware.NewObservabilityMgr(*staticConfiguration, metricsRegistry, semConvMetricRegistry, accessLog, tracer, tracerCloser)
 
 	// Entrypoints
 
-	serverEntryPointsTCP, err := server.NewTCPEntryPoints(staticConfiguration.EntryPoints, staticConfiguration.HostResolver, metricsRegistry)
+serverEntryPointsTCP, err := server.NewTCPEntryPoints(staticConfiguration.EntryPoints, staticConfiguration.HostResolver, metricsRegistry, tcpAccessLog)
 	if err != nil {
 		return nil, err
 	}
