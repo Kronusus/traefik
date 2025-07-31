@@ -3,6 +3,7 @@ package tcp
 import (
 	"context"
 	"github.com/traefik/traefik/v3/pkg/middlewares/accesslogtcp"
+	"time"
 )
 
 // AccessLogMiddleware is a TCP middleware that logs connection start and end events.

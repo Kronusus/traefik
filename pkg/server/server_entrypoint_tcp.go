@@ -33,7 +33,10 @@ import (
 	"github.com/traefik/traefik/v3/pkg/server/service"
 	"github.com/traefik/traefik/v3/pkg/tcp"
 	"github.com/traefik/traefik/v3/pkg/types"
+	"github.com/traefik/traefik/v3/pkg/middlewares/accesslogtcp"
 )
+
+
 
 type key string
 
@@ -85,12 +88,6 @@ func (h *httpForwarder) Accept() (net.Conn, error) {
 
 // TCPEntryPoints holds a map of TCPEntryPoint (the entrypoint names being the keys).
 type TCPEntryPoints map[string]*TCPEntryPoint
-
-// NewTCPEntryPoints creates a new TCPEntryPoints.
-// tcpAccessLogHandler is the global TCP access log handler, or nil if not enabled.
-import (
-	"github.com/traefik/traefik/v3/pkg/middlewares/accesslogtcp"
-)
 
 func NewTCPEntryPoints(entryPointsConfig static.EntryPoints, hostResolverConfig *types.HostResolverConfig, metricsRegistry metrics.Registry, tcpAccessLogHandler *accesslogtcp.Handler) (TCPEntryPoints, error) {
 	if os.Getenv(debugConnectionEnv) != "" {
