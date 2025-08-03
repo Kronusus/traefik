@@ -1,0 +1,19 @@
+# traefik-codespace.yml
+# Statische Konfiguration für Traefik in Codespaces
+
+log:
+  level: DEBUG
+
+accessLog: {}
+
+api:
+  insecure: true
+
+entryPoints:
+  web:
+    address: ":8000"
+  tcp-whoami:
+    address: ":8001"
+
+#$ docker run -d -p 9000:80 --name iamfoo traefik/whoami
+
