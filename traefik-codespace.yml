@@ -4,16 +4,23 @@
 log:
   level: DEBUG
 
-accessLog: {}
+accessLog: 
+  format: json
 
 api:
   insecure: true
-
 entryPoints:
   web:
-    address: ":8000"
+    address: ":80"
   tcp-whoami:
-    address: ":8001"
+    address: ":7001"
 
-#$ docker run -d -p 9000:80 --name iamfoo traefik/whoami
+
+providers:
+  file:
+    filename: "whoami.yaml"
+    watch: true
+
+#$ docker run -d -p 9000:80 --name whoamihttp traefik/whoami
+# docker run -d -p 7000:80 --name whoamitcp traefik/whoami
 

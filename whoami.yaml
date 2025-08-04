@@ -1,28 +1,18 @@
 # whoami.yml
 # Dynamische Konfiguration für Whoami
 
+# http routing section
 http:
   routers:
-    whoami-http:
-      rule: "Host(`localhost`)"
-      entryPoints:
-        - "web"
-      service: "whoami-service"
-  services:
-    whoami-service:
-      loadBalancer:
-        servers:
-          - url: "http://127.0.0.1:9000" # Der whoami-Service läuft auf Port 9000
+    # Define a connection between requests and services
+    to-whoami:
+      rule: "PathPrefix(`/whoami/`)"
+      # If the rule matches, forward to the whoami service (declared below)
+      service: whoami
 
-tcp:
-  routers:
-    whoami-tcp:
-      rule: "HostSNI(`*`)"
-      entryPoints:
-        - "tcp-whoami"
-      service: "whoami-tcp-service"
   services:
-    whoami-tcp-service:
+    # Define how to reach an existing service on our infrastructure
+    whoami:
       loadBalancer:
         servers:
-          - address: "127.0.0.1:9000" # Der whoami-Service läuft auf Port 9000
+        - url: http://localhost:9000
