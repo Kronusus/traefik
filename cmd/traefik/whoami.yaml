@@ -16,3 +16,20 @@ http:
       loadBalancer:
         servers:
         - url: http://localhost:9000
+
+
+
+# TCP routing section
+tcp:
+  routers:
+    to-whoami-tcp:
+      rule: "HostSNI(`*`)"
+      service: whoami-tcp
+      entryPoints:
+        - tcp-whoami
+
+  services:
+    whoami-tcp:
+      loadBalancer:
+        servers:
+          - address: "localhost:9000"
