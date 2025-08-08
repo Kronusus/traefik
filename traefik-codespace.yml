@@ -11,14 +11,16 @@ api:
   insecure: true
 entryPoints:
   web:
-    address: ":80"
+    address: ":8080"
   tcp-whoami:
     address: ":7001"
+  traefik:
+    address: ":8081"
 
 
 providers:
   file:
-    filename: "whoami.yaml"
+    filename: "cmd/traefik/whoami.yaml"
     watch: true
 
 #$ docker run -d -p 9000:80 --name whoamihttp traefik/whoami

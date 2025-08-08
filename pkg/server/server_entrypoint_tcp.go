@@ -33,10 +33,7 @@ import (
 	"github.com/traefik/traefik/v3/pkg/server/service"
 	"github.com/traefik/traefik/v3/pkg/tcp"
 	"github.com/traefik/traefik/v3/pkg/types"
-	"github.com/traefik/traefik/v3/pkg/middlewares/accesslogtcp"
 )
-
-
 
 type key string
 
@@ -89,7 +86,7 @@ func (h *httpForwarder) Accept() (net.Conn, error) {
 // TCPEntryPoints holds a map of TCPEntryPoint (the entrypoint names being the keys).
 type TCPEntryPoints map[string]*TCPEntryPoint
 
-func NewTCPEntryPoints(entryPointsConfig static.EntryPoints, hostResolverConfig *types.HostResolverConfig, metricsRegistry metrics.Registry, tcpAccessLogHandler *accesslogtcp.Handler) (TCPEntryPoints, error) {
+func NewTCPEntryPoints(entryPointsConfig static.EntryPoints, hostResolverConfig *types.HostResolverConfig, metricsRegistry metrics.Registry) (TCPEntryPoints, error) {
 	if os.Getenv(debugConnectionEnv) != "" {
 		expvar.Publish("clientConnectionStates", expvar.Func(func() any {
 			return clientConnectionStates
@@ -113,7 +110,7 @@ func NewTCPEntryPoints(entryPointsConfig static.EntryPoints, hostResolverConfig 
 			OpenConnectionsGauge().
 			With("entrypoint", entryPointName, "protocol", "TCP")
 
-	   serverEntryPointsTCP[entryPointName], err = NewTCPEntryPoint(ctx, entryPointName, config, hostResolverConfig, openConnectionsGauge, tcpAccessLogHandler)
+		serverEntryPointsTCP[entryPointName], err = NewTCPEntryPoint(ctx, entryPointName, config, hostResolverConfig, openConnectionsGauge)
 		if err != nil {
 			return nil, fmt.Errorf("error while building entryPoint %s: %w", entryPointName, err)
 		}
@@ -169,7 +166,7 @@ type TCPEntryPoint struct {
 }
 
 // NewTCPEntryPoint creates a new TCPEntryPoint.
-func NewTCPEntryPoint(ctx context.Context, name string, config *static.EntryPoint, hostResolverConfig *types.HostResolverConfig, openConnectionsGauge gokitmetrics.Gauge, tcpAccessLogHandler *accesslogtcp.Handler) (*TCPEntryPoint, error) {
+func NewTCPEntryPoint(ctx context.Context, name string, config *static.EntryPoint, hostResolverConfig *types.HostResolverConfig, openConnectionsGauge gokitmetrics.Gauge) (*TCPEntryPoint, error) {
 	tracker := newConnectionTracker(openConnectionsGauge)
 
 	listener, err := buildListener(ctx, name, config)
@@ -178,17 +175,12 @@ func NewTCPEntryPoint(ctx context.Context, name string, config *static.EntryPoin
 	}
 
 
-	   rt, err := tcprouter.NewRouter()
-	   if err != nil {
-			   return nil, fmt.Errorf("error preparing tcp router: %w", err)
-	   }
+	rt, err := tcprouter.NewRouter()
+	if err != nil {
+		return nil, fmt.Errorf("error preparing tcp router: %w", err)
+	}
 
-	   // Wrap the router with the TCP access log middleware if enabled
-	   var tcpHandler tcp.Handler = rt
-	   if tcpAccessLogHandler != nil {
-			   tcpHandler, _ = tcp.NewAccessLogMiddleware(tcpAccessLogHandler)(tcpHandler)
-	   }
-
+	var tcpHandler tcp.Handler = rt
 	reqDecorator := requestdecorator.New(hostResolverConfig)
 
 	httpServer, err := createHTTPServer(ctx, listener, config, true, reqDecorator)
@@ -210,8 +202,8 @@ func NewTCPEntryPoint(ctx context.Context, name string, config *static.EntryPoin
 
 	rt.SetHTTPSForwarder(httpsServer.Forwarder)
 
-	   tcpSwitcher := &tcp.HandlerSwitcher{}
-	   tcpSwitcher.Switch(tcpHandler)
+	tcpSwitcher := &tcp.HandlerSwitcher{}
+	tcpSwitcher.Switch(tcpHandler)
 
 	return &TCPEntryPoint{
 		listener:               listener,
