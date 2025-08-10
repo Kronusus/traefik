@@ -32,4 +32,4 @@ tcp:
     whoami-tcp:
       loadBalancer:
         servers:
-          - address: "localhost:9000"
+          - address: "localhost:7000"

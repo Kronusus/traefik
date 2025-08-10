@@ -20,7 +20,7 @@ entryPoints:
 
 providers:
   file:
-    filename: "cmd/traefik/whoami.yaml"
+    filename: "whoami.yaml"
     watch: true
 
 #$ docker run -d -p 9000:80 --name whoamihttp traefik/whoami
