@@ -11,9 +11,11 @@ api:
   insecure: true
 entryPoints:
   web:
-    address: ":80"
+    address: ":8080"
   tcp-whoami:
     address: ":7001"
+  traefik:
+    address: ":8081"
 
 
 providers:
