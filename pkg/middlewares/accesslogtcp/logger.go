@@ -3,7 +3,10 @@
 package accesslogtcp
 
 import (
+	"bytes"
 	"context"
+	"crypto/tls"
+	"encoding/pem"
 	"fmt"
 	"io"
 	"os"
@@ -62,12 +65,21 @@ func NewHandler(config *types.AccessLog) (*Handler, error) {
 // LogConnectionStart logs when a new TCP connection is accepted.
 // - clientAddr: the remote address of the client
 // - serverAddr: the local address of the server (Traefik's listening address)
-func (h *Handler) LogConnectionStart(ctx context.Context, clientAddr, serverAddr string) {
+func (h *Handler) LogConnectionStart(ctx context.Context, clientAddr, serverAddr string, tlsState *tls.ConnectionState) {
 	fields := logrus.Fields{
 		"event":       "connection_start",         // Mark this as a connection start event
 		"client_addr": clientAddr,                 // Remote client address
 		"server_addr": serverAddr,                 // Local server address
 		"timestamp":   time.Now().Format(time.RFC3339Nano), // Log the precise time
+	}
+
+	if tlsState != nil && len(tlsState.PeerCertificates) > 0 {
+		cert := tlsState.PeerCertificates[0]
+		buf := new(bytes.Buffer)
+		err := pem.Encode(buf, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
+		if err == nil {
+			fields["client_cert_pem"] = buf.String()
+		}
 	}
 
 	h.mu.Lock()
@@ -82,7 +94,7 @@ func (h *Handler) LogConnectionStart(ctx context.Context, clientAddr, serverAddr
 // - bytesOut:   bytes sent to the client
 // - duration:   how long the connection was open
 // - err:        any error that occurred, or nil for success
-func (h *Handler) LogConnectionEnd(ctx context.Context, clientAddr, serverAddr string, bytesIn, bytesOut int64, duration time.Duration, err error) {
+func (h *Handler) LogConnectionEnd(ctx context.Context, clientAddr, serverAddr string, bytesIn, bytesOut int64, duration time.Duration, err error, tlsState *tls.ConnectionState) {
 	fields := logrus.Fields{
 		"event":       "connection_end",
 		"client_addr": clientAddr,
@@ -97,6 +109,15 @@ func (h *Handler) LogConnectionEnd(ctx context.Context, clientAddr, serverAddr s
 		fields["status"] = "error"
 	} else {
 		fields["status"] = "success"
+	}
+
+	if tlsState != nil && len(tlsState.PeerCertificates) > 0 {
+		cert := tlsState.PeerCertificates[0]
+		buf := new(bytes.Buffer)
+		err := pem.Encode(buf, &pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
+		if err == nil {
+			fields["client_cert_pem"] = buf.String()
+		}
 	}
 
 	h.mu.Lock()
