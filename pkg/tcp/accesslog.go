@@ -2,6 +2,7 @@ package tcp
 
 import (
 	"context"
+	"crypto/tls"
 	"github.com/traefik/traefik/v3/pkg/middlewares/accesslogtcp"
 	"time"
 )
@@ -27,7 +28,18 @@ func (a *AccessLogMiddleware) ServeTCP(conn WriteCloser) {
 	ctx := context.Background()
 	clientAddr := conn.RemoteAddr().String()
 	serverAddr := conn.LocalAddr().String()
-	a.handler.LogConnectionStart(ctx, clientAddr, serverAddr)
+
+	var tlsState *tls.ConnectionState
+	if tlsConn, ok := conn.(*tls.Conn); ok {
+		// The handshake is not guaranteed to be complete at this point,
+		// so we need to wait for it.
+		if err := tlsConn.Handshake(); err == nil {
+			state := tlsConn.ConnectionState()
+			tlsState = &state
+		}
+	}
+
+	a.handler.LogConnectionStart(ctx, clientAddr, serverAddr, tlsState)
 
 	// Wrap conn to count bytes and measure duration
 	start := nowFunc()
@@ -35,7 +47,7 @@ func (a *AccessLogMiddleware) ServeTCP(conn WriteCloser) {
 	a.next.ServeTCP(countingConn)
 	duration := nowFunc().Sub(start)
 	bytesIn, bytesOut := countingConn.BytesRead(), countingConn.BytesWritten()
-	a.handler.LogConnectionEnd(ctx, clientAddr, serverAddr, bytesIn, bytesOut, duration, nil)
+	a.handler.LogConnectionEnd(ctx, clientAddr, serverAddr, bytesIn, bytesOut, duration, nil, tlsState)
 }
 
 // nowFunc is a variable for testability.
